@@ -17,15 +17,15 @@
 
     /* ===== 90s GLOBAL LOOK ===== */
     :root{
-      --ink:#001b44;              /* deep link-blue */
-      --hot:#ff0066;              /* hot pink */
-      --lem:#00d084;              /* basil greenish */
-      --aqua:#00e5ff;             /* neon cyan */
-      --gold:#ffd700;             /* 90s gold */
-      --bg1:#fdf7e3;              /* vanilla page */
-      --bg2:#e8fff3;              /* mint page */
-      --bevel-light:#fff8cc; 
-      --bevel-dark:#a29c7c; 
+      --ink:#001b44;
+      --hot:#ff0066;
+      --lem:#00d084;
+      --aqua:#00e5ff;
+      --gold:#ffd700;
+      --bg1:#fdf7e3;
+      --bg2:#e8fff3;
+      --bevel-light:#fff8cc;
+      --bevel-dark:#a29c7c;
     }
 
     html,body{height:100%;}
@@ -33,28 +33,17 @@
       margin:0;
       font-family: "Balsamiq Sans","Comic Sans MS", Tahoma, Verdana, system-ui, sans-serif;
       color: var(--ink);
-      /* tiled starburst bg */
       background:
         radial-gradient(circle at 12px 12px, rgba(255,255,255,.35) 2px, transparent 3px) 0 0/24px 24px,
         linear-gradient(45deg, #e6fff2, #fffbe6);
-      cursor: auto; /* keep simple for Chrome consistency */
+      /* Cursor set by JS (90s Mode toggle) */
     }
 
-    /* Header ticker (CSS-based, cross-browser) */
-    .marq{
-      background: linear-gradient(90deg, #fff, #ffe8f5, #e6fff2);
-      border:3px ridge var(--gold);
-      padding:2px;
-      overflow:hidden;
-    }
-    .ticker{
-      display:inline-block;
-      white-space:nowrap;
-      padding:2px 0;
-      font-weight:bold;
-      color:#0b6b2e;
-      animation: scroll 18s linear infinite;
-    }
+    /* Header strip: we keep BOTH variants and toggle visibility */
+    .marq{ background: linear-gradient(90deg, #fff, #ffe8f5, #e6fff2); border:3px ridge var(--gold); padding:2px; }
+    .marquee-wrap{ overflow:hidden; }
+    marquee{ font-weight: bold; color:#0b6b2e; display:block; }
+    .ticker{ display:inline-block; white-space:nowrap; padding:2px 0; font-weight:bold; color:#0b6b2e; animation: scroll 18s linear infinite; }
     @keyframes scroll { from{ transform: translateX(100%);} to{ transform: translateX(-100%);} }
 
     /* Layout */
@@ -78,13 +67,18 @@
       font-weight:700; transform: rotate(-6deg); box-shadow: 3px 3px 0 #0002; margin-left:6px;
     }
 
-    /* Nav buttons */
-    .nav{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+    /* Nav + 90s Mode switch */
+    .nav{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
     .btn{
       border:3px outset #ccc; background:#fefefe; padding:8px 12px; font-weight:700; text-decoration:none; color:#083;
       box-shadow: 2px 2px 0 #0002; transition: transform .05s;
     }
     .btn:hover{ transform: translateY(-1px); }
+    .mode{
+      border:3px outset #ccc; background:#fffef0; padding:6px 10px; font-weight:900;
+      display:inline-flex; gap:8px; align-items:center; cursor:pointer;
+    }
+    .mode input{ accent-color:#0b6b2e; }
 
     /* Two columns */
     .grid{ display:grid; grid-template-columns: 1.2fr .8fr; gap:16px; margin-top:16px; }
@@ -143,11 +137,20 @@
     .sticker{ position:absolute; top:-14px; right:-6px; transform: rotate(10deg); background:#fffbcc; border:3px ridge #e0d48a; padding:2px 8px; font-weight:900; box-shadow:2px 2px 0 #0002; }
 
     .note{ font-size:12px; color:#555; }
+
+    /* Helpers for toggling variants */
+    .hide{ display:none !important; }
   </style>
 </head>
 <body>
+  <!-- HEADER: both variants live here -->
   <div class="marq">
-    <div class="ticker">🌿 FRESH BASIL • SMALL €5 • MEDIUM €8 • 🚚 FLAT NL SHIPPING €6 • GROWN WITH LOVE • LIMITED STOCK • 🌿</div>
+    <div class="marquee-wrap" id="bar-classic">
+      <marquee scrollamount="6">🌿 FRESH BASIL • SMALL €5 • MEDIUM €8 • 🚚 FLAT NL SHIPPING €6 • GROWN WITH LOVE • LIMITED STOCK • 🌿</marquee>
+    </div>
+    <div class="marquee-wrap hide" id="bar-safe">
+      <div class="ticker">🌿 FRESH BASIL • SMALL €5 • MEDIUM €8 • 🚚 FLAT NL SHIPPING €6 • GROWN WITH LOVE • LIMITED STOCK • 🌿</div>
+    </div>
   </div>
 
   <div class="wrap">
@@ -157,6 +160,10 @@
         <a class="btn" href="#shop">🛒 Shop</a>
         <a class="btn" href="#agent">🤖 Order Agent</a>
         <a class="btn" href="#faq">❓ FAQ</a>
+        <label class="mode" title="Toggle 90s Mode / Safe Mode">
+          <input type="checkbox" id="modeToggle" />
+          <span>🎛 90s Mode</span>
+        </label>
       </nav>
     </header>
 
@@ -281,16 +288,59 @@
   <script>
     // ===== CONFIG =====
     const CONFIG = {
-      sellerEmail: "youremail@example.com", // TODO: change this to your real receiving address
+      sellerEmail: "youremail@example.com", // TODO: change this
       shippingEUR: 6,
       prices: { small: 5, medium: 8 }
     };
 
-    // Populate UI from config
-    document.getElementById('price-small').textContent = CONFIG.prices.small;
-    document.getElementById('price-medium').textContent = CONFIG.prices.medium;
-    document.getElementById('ship').textContent = CONFIG.shippingEUR;
-    document.getElementById('sellerEmailCode').textContent = CONFIG.sellerEmail;
+    // ===== 90s Mode toggle (Classic vs Safe) =====
+    const MODE_KEY = 'basil-90s-mode';
+    const modeToggle = () => {
+      const classic = localStorage.getItem(MODE_KEY) !== 'safe';
+      document.getElementById('modeToggle').checked = classic;
+
+      // Banner variant
+      document.getElementById('bar-classic').classList.toggle('hide', !classic);
+      document.getElementById('bar-safe').classList.toggle('hide', classic);
+
+      // Cursor variant
+      if (classic) {
+        // Emoji SVG glitter cursor ✨
+        document.body.style.cursor =
+          "url('data:image/svg+xml;utf8," +
+          "<svg xmlns=\\\"http://www.w3.org/2000/svg\\\" width=\\\"32\\\" height=\\\"32\\\" viewBox=\\\"0 0 32 32\\\">" +
+          "<text y=\\\"24\\\" font-size=\\\"24\\\">✨</text></svg>') 4 4, auto";
+      } else {
+        document.body.style.cursor = 'auto';
+      }
+    };
+
+    window.addEventListener('load', () => {
+      // Populate UI from config
+      document.getElementById('price-small').textContent = CONFIG.prices.small;
+      document.getElementById('price-medium').textContent = CONFIG.prices.medium;
+      document.getElementById('ship').textContent = CONFIG.shippingEUR;
+      document.getElementById('sellerEmailCode').textContent = CONFIG.sellerEmail;
+
+      // Boot 90s mode
+      modeToggle();
+
+      document.getElementById('modeToggle').addEventListener('change', (e) => {
+        localStorage.setItem(MODE_KEY, e.target.checked ? 'classic' : 'safe');
+        modeToggle();
+      });
+
+      // Boot agent + thanks checker + counter
+      greet();
+      checkThanks();
+      (function(){
+        const key = 'basil-counter';
+        let n = parseInt(localStorage.getItem(key)||'123',10);
+        n += Math.floor(Math.random()*3)+1;
+        localStorage.setItem(key, n);
+        document.getElementById('counter').textContent = String(n).padStart(6,'0');
+      })();
+    });
 
     // ===== CART LOGIC =====
     const cart = { small: 0, medium: 0 };
@@ -328,7 +378,6 @@
     }
 
     function placeOrder(){
-      // gather
       const name = document.getElementById('name').value.trim();
       const email = document.getElementById('email').value.trim();
       const street = document.getElementById('street').value.trim();
@@ -402,10 +451,9 @@
         if(!res.ok){ const t = await res.text(); throw new Error(t||('HTTP '+res.status)); }
         const data = await res.json();
         if(!data.paymentUrl){ throw new Error('No paymentUrl from server.'); }
-        // remember last order for status check
         localStorage.setItem('basil-last-ref', orderId);
         localStorage.setItem('basil-last-provider', provider);
-        window.location.href = data.paymentUrl; // redirect to provider checkout
+        window.location.href = data.paymentUrl;
       }catch(err){
         console.error(err);
         alert('Could not start payment. You can still place order via email.');
@@ -478,17 +526,14 @@
           const t = text.toLowerCase();
           if(t==='cancel'){ say('Cancelled. Type <code>small</code> or <code>medium</code> to start again.'); state.step='size'; return; }
           if(t!=='confirm'){ say("Please type <code>confirm</code> or <code>cancel</code>."); return; }
-          // Add to cart + open email
           cart[state.choice] += state.qty;
           renderCart();
-          // prefill checkout fields
           document.getElementById('name').value = state.buyer.name;
           document.getElementById('email').value = state.buyer.email;
           document.getElementById('street').value = state.buyer.street;
           document.getElementById('postcode').value = state.buyer.postcode;
           document.getElementById('city').value = state.buyer.city;
 
-          // Compose email
           const subtotal = CONFIG.prices[state.choice] * state.qty;
           const total = subtotal + CONFIG.shippingEUR;
           const body = encodeURIComponent(
@@ -501,9 +546,6 @@
           break; }
       }
     }
-
-    // Boot agent
-    greet();
 
     // ===== THANKS PAGE AUTO STATUS CHECK =====
     function checkThanks(){
@@ -531,17 +573,7 @@
         }, 5000);
       }
     }
-    window.addEventListener('load', checkThanks);
     window.addEventListener('hashchange', checkThanks);
-
-    // ===== FUN: VISITOR COUNTER =====
-    (function(){
-      const key = 'basil-counter';
-      let n = parseInt(localStorage.getItem(key)||'123',10);
-      n += Math.floor(Math.random()*3)+1; // bouncy
-      localStorage.setItem(key, n);
-      document.getElementById('counter').textContent = String(n).padStart(6,'0');
-    })();
   </script>
 </body>
 </html>
