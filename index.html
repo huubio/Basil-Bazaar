@@ -6,270 +6,542 @@
   <title>🌿 BASIL BAZAAR '99 — Fresh Dutch Basil!</title>
   <meta name="description" content="Buy small and medium basil plants. Flat €6 shipping anywhere in the Netherlands. Retro 90s website vibes with a friendly order agent." />
 
-<script>
-  // ===== CONFIG =====
-  const CONFIG = {
-    sellerEmail: "youremail@example.com", // TODO: change this to your real receiving address
-    shippingEUR: 6,
-    prices: { small: 5, medium: 8 }
-  };
+  <!-- Webfont for consistent 90s look -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Balsamiq+Sans:wght@400;700&display=swap" rel="stylesheet">
 
-  // Populate UI from config
-  document.getElementById('price-small').textContent = CONFIG.prices.small;
-  document.getElementById('price-medium').textContent = CONFIG.prices.medium;
-  document.getElementById('ship').textContent = CONFIG.shippingEUR;
-  document.getElementById('sellerEmailCode').textContent = CONFIG.sellerEmail;
+  <style>
+    /* Global consistency */
+    *, *::before, *::after { box-sizing: border-box; }
+    body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 
-  // ===== CART LOGIC =====
-  const cart = { small: 0, medium: 0 };
-
-  function stepQty(kind, delta){
-    const inp = document.getElementById('qty-'+kind);
-    const v = Math.max(0, (parseInt(inp.value||0) + delta));
-    inp.value = v;
-  }
-
-  function addToCart(kind){
-    const inp = document.getElementById('qty-'+kind);
-    const q = Math.max(0, parseInt(inp.value||0));
-    cart[kind] += q;
-    inp.value = 0;
-    renderCart();
-  }
-
-  function renderCart(){
-    const list = document.getElementById('cartList');
-    const lines = [];
-    let subtotal = 0;
-    for(const k of ['small','medium']){
-      const qty = cart[k];
-      if(!qty) continue;
-      const price = CONFIG.prices[k];
-      const line = qty*price;
-      subtotal += line;
-      lines.push(`<div>• <b>${k[0].toUpperCase()+k.slice(1)}</b> × ${qty} — €${line}</div>`);
+    /* ===== 90s GLOBAL LOOK ===== */
+    :root{
+      --ink:#001b44;              /* deep link-blue */
+      --hot:#ff0066;              /* hot pink */
+      --lem:#00d084;              /* basil greenish */
+      --aqua:#00e5ff;             /* neon cyan */
+      --gold:#ffd700;             /* 90s gold */
+      --bg1:#fdf7e3;              /* vanilla page */
+      --bg2:#e8fff3;              /* mint page */
+      --bevel-light:#fff8cc; 
+      --bevel-dark:#a29c7c; 
     }
-    if(lines.length===0){ list.innerHTML = '<span class="note">No items yet — add some basil! 🌿</span>'; }
-    else { list.innerHTML = lines.join(''); }
-    const total = subtotal>0 ? subtotal + CONFIG.shippingEUR : 0;
-    document.getElementById('total').textContent = total;
-  }
 
-  function placeOrder(){
-    // gather
-    const name = document.getElementById('name').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const street = document.getElementById('street').value.trim();
-    const postcode = document.getElementById('postcode').value.trim();
-    const city = document.getElementById('city').value.trim();
-    const notes = document.getElementById('notes').value.trim();
+    html,body{height:100%;}
+    body{
+      margin:0;
+      font-family: "Balsamiq Sans","Comic Sans MS", Tahoma, Verdana, system-ui, sans-serif;
+      color: var(--ink);
+      /* tiled starburst bg */
+      background:
+        radial-gradient(circle at 12px 12px, rgba(255,255,255,.35) 2px, transparent 3px) 0 0/24px 24px,
+        linear-gradient(45deg, #e6fff2, #fffbe6);
+      cursor: auto; /* keep simple for Chrome consistency */
+    }
 
-    const items = [];
-    let subtotal = 0;
-    for(const k of ['small','medium']){
-      if(cart[k]>0){
-        items.push(`${k.toUpperCase()} × ${cart[k]} @ €${CONFIG.prices[k]} = €${cart[k]*CONFIG.prices[k]}`);
-        subtotal += cart[k]*CONFIG.prices[k];
+    /* Header ticker (CSS-based, cross-browser) */
+    .marq{
+      background: linear-gradient(90deg, #fff, #ffe8f5, #e6fff2);
+      border:3px ridge var(--gold);
+      padding:2px;
+      overflow:hidden;
+    }
+    .ticker{
+      display:inline-block;
+      white-space:nowrap;
+      padding:2px 0;
+      font-weight:bold;
+      color:#0b6b2e;
+      animation: scroll 18s linear infinite;
+    }
+    @keyframes scroll { from{ transform: translateX(100%);} to{ transform: translateX(-100%);} }
+
+    /* Layout */
+    .wrap{ max-width:1100px; margin: 18px auto 60px; padding: 0 12px; }
+
+    /* Title banner */
+    .banner{
+      display:grid; gap:10px; grid-template-columns: 1fr auto; align-items:center;
+      background: repeating-linear-gradient( -45deg, #fff, #fff 10px, #e5ffe5 10px, #e5ffe5 20px );
+      border: 4px outset var(--bevel-dark);
+      box-shadow: 4px 4px 0 #3336;
+      padding: 14px 16px;
+    }
+    .title{
+      font-size: clamp(28px, 5vw, 44px);
+      line-height:1.05;
+      text-shadow: 2px 2px 0 #fff, 4px 4px 0 #79ffa8;
+    }
+    .badge{
+      display:inline-block; padding:6px 10px; border:3px inset var(--gold); background:#fff7cc;
+      font-weight:700; transform: rotate(-6deg); box-shadow: 3px 3px 0 #0002; margin-left:6px;
+    }
+
+    /* Nav buttons */
+    .nav{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+    .btn{
+      border:3px outset #ccc; background:#fefefe; padding:8px 12px; font-weight:700; text-decoration:none; color:#083;
+      box-shadow: 2px 2px 0 #0002; transition: transform .05s;
+    }
+    .btn:hover{ transform: translateY(-1px); }
+
+    /* Two columns */
+    .grid{ display:grid; grid-template-columns: 1.2fr .8fr; gap:16px; margin-top:16px; }
+    @media (max-width: 900px){ .grid{ grid-template-columns: 1fr; } }
+
+    /* Product table card */
+    .card{ background: var(--bg1); border: 4px groove #9fb48a; box-shadow: 6px 6px 0 #0001; padding: 12px; }
+    .card h2{ margin:0 0 8px; font-size: 24px; }
+    .table{ width:100%; border-collapse: collapse; }
+    .table th, .table td{ border: 3px ridge #c5d7b1; padding:10px; background:#fff; }
+    .table th{ background:#eaffea; }
+
+    .img90s{
+      height: 100px; width: 100%; background:
+        radial-gradient(circle at 30% 40%, #8cffc2, transparent 40%),
+        radial-gradient(circle at 70% 60%, #fff082, transparent 45%),
+        linear-gradient(135deg, #d7ffe8, #fff);
+      border: 4px inset #b9c79a; position:relative; overflow: hidden; text-align:center; font-size:30px;
+    }
+    .img90s span{ position:absolute; inset:0; display:grid; place-items:center; filter: drop-shadow(1px 1px 0 #fff) drop-shadow(2px 2px 0 #00c661); }
+
+    .qty{ display:flex; gap:6px; align-items:center; justify-content:center; }
+    .qty button{ width:28px; height:28px; border:3px outset #ccc; background:#fff; font-weight:900; }
+
+    .buybtn{ background: linear-gradient(#fff, #e6fff1); border:3px outset #b3d3b3; padding:8px 12px; font-weight:900; }
+
+    /* Checkout box */
+    .checkout{
+      background: var(--bg2); border: 4px groove #86c9c9; padding:12px; position: sticky; top:10px;
+    }
+    .tot{ font-size:22px; font-weight:900; color:#0b6b2e; text-shadow:1px 1px 0 #fff; }
+
+    /* Agent window */
+    .agent{
+      background:#f6f6ff; border:4px ridge #a7a7e8; box-shadow: 6px 6px 0 #0001; display:flex; flex-direction:column; height: 520px;
+    }
+    .agentHead{ background:linear-gradient(#eaeaff, #d2d2ff); padding:8px; display:flex; gap:8px; align-items:center; border-bottom:3px solid #b9b9ff; }
+    .dot{ width:12px; height:12px; border-radius:50%; background:#ff5f57; box-shadow:inset -1px -1px 0 #0002; }
+    .dot:nth-child(2){ background:#ffbd2e; } .dot:nth-child(3){ background:#28c840; }
+    .agentBody{ flex:1; overflow:auto; padding:10px; background: repeating-linear-gradient( 90deg, #ffffff, #ffffff 18px, #f4f4ff 18px, #f4f4ff 36px ); }
+    .msg{ max-width:80%; margin:6px 0; padding:8px 10px; border:3px ridge #ccc; background:#fff; }
+    .me{ margin-left:auto; background:#eaffea; border-color:#9fd19f; }
+    .bot{ background:#fff; border-color:#c9c9ff; }
+    .agentFoot{ display:flex; gap:8px; padding:8px; border-top:3px solid #b9b9ff; }
+    .agentFoot input{ flex:1; padding:10px; border:3px inset #ccc; }
+
+    /* Blink tag emulation */
+    .blink{ animation: blink 1s steps(2, start) infinite; }
+    @keyframes blink { to { visibility:hidden; } }
+
+    /* Footer */
+    footer{ margin: 26px 0; text-align:center; font-size:14px; color:#333; }
+    .counter{ display:inline-block; padding:6px 10px; border:3px inset #ccc; background:#fff; }
+
+    /* Tiny stickers */
+    .sticker{ position:absolute; top:-14px; right:-6px; transform: rotate(10deg); background:#fffbcc; border:3px ridge #e0d48a; padding:2px 8px; font-weight:900; box-shadow:2px 2px 0 #0002; }
+
+    .note{ font-size:12px; color:#555; }
+  </style>
+</head>
+<body>
+  <div class="marq">
+    <div class="ticker">🌿 FRESH BASIL • SMALL €5 • MEDIUM €8 • 🚚 FLAT NL SHIPPING €6 • GROWN WITH LOVE • LIMITED STOCK • 🌿</div>
+  </div>
+
+  <div class="wrap">
+    <header class="banner">
+      <div class="title">🌿 BASIL BAZAAR '99 <span class="badge">NOW OPEN</span></div>
+      <nav class="nav">
+        <a class="btn" href="#shop">🛒 Shop</a>
+        <a class="btn" href="#agent">🤖 Order Agent</a>
+        <a class="btn" href="#faq">❓ FAQ</a>
+      </nav>
+    </header>
+
+    <div class="grid" id="shop">
+      <!-- Left: Products -->
+      <section class="card">
+        <h2>Choose Your Basil 🌱</h2>
+        <p class="note">Small ≈ 1–2 strong stems • Medium ≈ 3–4 strong stems. Healthy supermarket rescues, lovingly up-potted. Shipped in protective wrap.</p>
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width:160px">Plant</th>
+              <th>Details</th>
+              <th style="width:140px">Price</th>
+              <th style="width:180px">Quantity</th>
+              <th style="width:160px">Add</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="img90s"><span>🌿</span><div class="sticker blink">HOT</div></div>
+              </td>
+              <td>
+                <b>Small Basil</b><br>
+                Compact & punchy. Perfect for kitchen windowsills and pizza nights.
+              </td>
+              <td><b>€<span id="price-small">5</span></b></td>
+              <td>
+                <div class="qty">
+                  <button onclick="stepQty('small',-1)">−</button>
+                  <input id="qty-small" type="number" min="0" value="0" style="width:50px; text-align:center; border:3px inset #ccc; padding:6px" />
+                  <button onclick="stepQty('small',1)">+</button>
+                </div>
+              </td>
+              <td><button class="buybtn" onclick="addToCart('small')">Add to Cart</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="img90s"><span>🌱</span><div class="sticker">NEW</div></div>
+              </td>
+              <td>
+                <b>Medium Basil</b><br>
+                Bigger bush, more leaves, more pesto. Best value for hungry households.
+              </td>
+              <td><b>€<span id="price-medium">8</span></b></td>
+              <td>
+                <div class="qty">
+                  <button onclick="stepQty('medium',-1)">−</button>
+                  <input id="qty-medium" type="number" min="0" value="0" style="width:50px; text-align:center; border:3px inset #ccc; padding:6px" />
+                  <button onclick="stepQty('medium',1)">+</button>
+                </div>
+              </td>
+              <td><button class="buybtn" onclick="addToCart('medium')">Add to Cart</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Right: Checkout + Agent Tabbed -->
+      <aside>
+        <div class="checkout" id="checkout">
+          <h3>🧾 Your Cart</h3>
+          <div id="cartList" class="note">No items yet — add some basil! 🌿</div>
+          <hr>
+          <div>Shipping (NL): <b>€<span id="ship">6</span></b></div>
+          <div class="tot">Total: €<span id="total">0</span></div>
+          <details style="margin:10px 0">
+            <summary><b>Checkout Details</b></summary>
+            <div style="display:grid; gap:8px; margin-top:10px">
+              <input id="name" placeholder="Full name" />
+              <input id="email" placeholder="Email" />
+              <input id="street" placeholder="Street & number" />
+              <div style="display:flex; gap:8px">
+                <input id="postcode" placeholder="Postcode" style="flex:1" />
+                <input id="city" placeholder="City" style="flex:2" />
+              </div>
+              <input id="notes" placeholder="Notes (optional)" />
+              <button class="buybtn" onclick="placeOrder()">Place Order via Email</button>
+              <button class="buybtn" style="margin-top:6px" onclick="payWithTikkie()">Pay with iDEAL (via Tikkie)</button>
+              <button class="buybtn" style="margin-top:6px" onclick="payWithMollie()">Pay with iDEAL (via Mollie)</button>
+              <div class="note">Choose instant checkout to get a secure payment link. You'll be redirected to Tikkie or Mollie.</div>
+            </div>
+          </details>
+        </div>
+
+        <div id="agent" style="margin-top:16px" class="agent">
+          <div class="agentHead">
+            <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            <b>🤖 BASI-L 1.0 — Order Agent</b>
+          </div>
+          <div id="chat" class="agentBody"></div>
+          <div class="agentFoot">
+            <input id="chatInput" placeholder="Type here… (e.g., 'medium', '2')" onkeydown="if(event.key==='Enter'){send()}" />
+            <button class="btn" onclick="send()">Send</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <section id="faq" class="card" style="margin-top:16px">
+      <h2>FAQ ❓</h2>
+      <p><b>How much is shipping?</b> Flat <b>€6</b> anywhere in the Netherlands. Combined shipping for multiple plants.
+      <br><b>When do you ship?</b> Within 2–4 days, weather-permitting (we avoid freezing/heat waves).
+      <br><b>Care tips?</b> Bright light, regular watering, pinch tops to encourage bushiness, and repot when roots fill the pot.</p>
+    </section>
+
+    <section id="thanks" class="card" style="margin-top:16px; display:none">
+      <h2>✅ Thanks — Checking Your Payment</h2>
+      <p class="note">If you just paid via iDEAL, this page will auto-refresh the status every few seconds.</p>
+      <div id="payStatus" class="tot">Waiting for update…</div>
+      <p class="note">If it takes longer than a minute, your bank may still be processing. You can safely close this tab — we’ll still receive your order via the provider.</p>
+    </section>
+
+    <footer>
+      <div class="counter">Visitor counter: <span id="counter">000123</span></div>
+      <div class="note">© 1999–2025 Basil Bazaar. This site proudly uses <span class="blink">&lt;marquee&gt;</span> and heavy bevels.</div>
+      <div class="note">Seller email (edit in code): <code id="sellerEmailCode">youremail@example.com</code></div>
+    </footer>
+  </div>
+
+  <script>
+    // ===== CONFIG =====
+    const CONFIG = {
+      sellerEmail: "youremail@example.com", // TODO: change this to your real receiving address
+      shippingEUR: 6,
+      prices: { small: 5, medium: 8 }
+    };
+
+    // Populate UI from config
+    document.getElementById('price-small').textContent = CONFIG.prices.small;
+    document.getElementById('price-medium').textContent = CONFIG.prices.medium;
+    document.getElementById('ship').textContent = CONFIG.shippingEUR;
+    document.getElementById('sellerEmailCode').textContent = CONFIG.sellerEmail;
+
+    // ===== CART LOGIC =====
+    const cart = { small: 0, medium: 0 };
+
+    function stepQty(kind, delta){
+      const inp = document.getElementById('qty-'+kind);
+      const v = Math.max(0, (parseInt(inp.value||0) + delta));
+      inp.value = v;
+    }
+
+    function addToCart(kind){
+      const inp = document.getElementById('qty-'+kind);
+      const q = Math.max(0, parseInt(inp.value||0));
+      cart[kind] += q;
+      inp.value = 0;
+      renderCart();
+    }
+
+    function renderCart(){
+      const list = document.getElementById('cartList');
+      const lines = [];
+      let subtotal = 0;
+      for(const k of ['small','medium']){
+        const qty = cart[k];
+        if(!qty) continue;
+        const price = CONFIG.prices[k];
+        const line = qty*price;
+        subtotal += line;
+        lines.push(`<div>• <b>${k[0].toUpperCase()+k.slice(1)}</b> × ${qty} — €${line}</div>`);
+      }
+      if(lines.length===0){ list.innerHTML = '<span class="note">No items yet — add some basil! 🌿</span>'; }
+      else { list.innerHTML = lines.join(''); }
+      const total = subtotal>0 ? subtotal + CONFIG.shippingEUR : 0;
+      document.getElementById('total').textContent = total;
+    }
+
+    function placeOrder(){
+      // gather
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const street = document.getElementById('street').value.trim();
+      const postcode = document.getElementById('postcode').value.trim();
+      const city = document.getElementById('city').value.trim();
+      const notes = document.getElementById('notes').value.trim();
+
+      const items = [];
+      let subtotal = 0;
+      for(const k of ['small','medium']){
+        if(cart[k]>0){
+          items.push(`${k.toUpperCase()} × ${cart[k]} @ €${CONFIG.prices[k]} = €${cart[k]*CONFIG.prices[k]}`);
+          subtotal += cart[k]*CONFIG.prices[k];
+        }
+      }
+      if(items.length===0){ alert('Cart is empty. Add some basil first.'); return; }
+      if(!name || !email || !street || !postcode || !city){ alert('Please fill name, email, street, postcode, and city.'); return; }
+
+      const total = subtotal + CONFIG.shippingEUR;
+      const body = encodeURIComponent(
+        `New basil order\n\nItems:\n- ${items.join('\n- ')}\n\nSubtotal: €${subtotal}\nShipping (NL): €${CONFIG.shippingEUR}\nTOTAL: €${total}\n\nBuyer:\n${name}\n${street}\n${postcode} ${city}\nEmail: ${email}\nNotes: ${notes || '-'}\n\nPlease reply with payment link and ETA.`
+      );
+      const subject = encodeURIComponent(`Basil Order — ${name}`);
+      const mailto = `mailto:${CONFIG.sellerEmail}?subject=${subject}&body=${body}`;
+      window.location.href = mailto;
+    }
+
+    // ===== ORDER GATHER (for payments) =====
+    function gatherOrder(){
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const street = document.getElementById('street').value.trim();
+      const postcode = document.getElementById('postcode').value.trim();
+      const city = document.getElementById('city').value.trim();
+      const notes = document.getElementById('notes').value.trim();
+
+      const items = [];
+      let subtotal = 0;
+      for(const k of ['small','medium']){
+        if(cart[k]>0){
+          items.push({ kind:k, qty:cart[k], unit: CONFIG.prices[k], line: cart[k]*CONFIG.prices[k] });
+          subtotal += cart[k]*CONFIG.prices[k];
+        }
+      }
+      if(items.length===0){ return { error: 'Cart is empty. Add some basil first.' }; }
+      if(!name || !email || !street || !postcode || !city){ return { error: 'Please fill name, email, street, postcode, and city.' }; }
+      const total = subtotal + CONFIG.shippingEUR;
+      const buyer = { name, email, street, postcode, city, notes };
+      return { items, subtotal, total, buyer };
+    }
+
+    // ===== START PAYMENT (Tikkie / Mollie) =====
+    async function startPayment(provider){
+      const order = gatherOrder();
+      if(order.error){ alert(order.error); return; }
+      const orderId = 'BASIL-' + Date.now();
+      const desc = `${order.items.map(i => `${i.kind.toUpperCase()}x${i.qty}`).join('+')} + ship`;
+      const returnUrl = location.origin + '/#thanks?o=' + encodeURIComponent(orderId);
+      try{
+        const res = await fetch('/api/create-payment',{
+          method:'POST', headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({
+            provider,
+            amountEUR: Number(order.total),
+            description: `Basil order ${orderId} (${desc})`,
+            referenceId: orderId,
+            buyer: order.buyer,
+            returnUrl
+          })
+        });
+        if(!res.ok){ const t = await res.text(); throw new Error(t||('HTTP '+res.status)); }
+        const data = await res.json();
+        if(!data.paymentUrl){ throw new Error('No paymentUrl from server.'); }
+        // remember last order for status check
+        localStorage.setItem('basil-last-ref', orderId);
+        localStorage.setItem('basil-last-provider', provider);
+        window.location.href = data.paymentUrl; // redirect to provider checkout
+      }catch(err){
+        console.error(err);
+        alert('Could not start payment. You can still place order via email.');
       }
     }
-    if(items.length===0){ alert('Cart is empty. Add some basil first.'); return; }
-    if(!name || !email || !street || !postcode || !city){ alert('Please fill name, email, street, postcode, and city.'); return; }
 
-    const total = subtotal + CONFIG.shippingEUR;
-    const body = encodeURIComponent(
-      `New basil order\n\nItems:\n- ${items.join('\n- ')}\n\nSubtotal: €${subtotal}\nShipping (NL): €${CONFIG.shippingEUR}\nTOTAL: €${total}\n\nBuyer:\n${name}\n${street}\n${postcode} ${city}\nEmail: ${email}\nNotes: ${notes || '-'}\n\nPlease reply with payment link and ETA.`
-    );
-    const subject = encodeURIComponent(`Basil Order — ${name}`);
-    const mailto = `mailto:${CONFIG.sellerEmail}?subject=${subject}&body=${body}`;
-    window.location.href = mailto;
-  }
+    function payWithTikkie(){ startPayment('tikkie'); }
+    function payWithMollie(){ startPayment('mollie'); }
 
-  // ===== ORDER GATHER (for payments) =====
-  function gatherOrder(){
-    const name = document.getElementById('name').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const street = document.getElementById('street').value.trim();
-    const postcode = document.getElementById('postcode').value.trim();
-    const city = document.getElementById('city').value.trim();
-    const notes = document.getElementById('notes').value.trim();
+    // ===== AGENT (BASI-L 1.0) =====
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('chatInput');
+    let state = { step: 'hello', choice: null, qty: 0, buyer:{} };
 
-    const items = [];
-    let subtotal = 0;
-    for(const k of ['small','medium']){
-      if(cart[k]>0){
-        items.push({ kind:k, qty:cart[k], unit: CONFIG.prices[k], line: cart[k]*CONFIG.prices[k] });
-        subtotal += cart[k]*CONFIG.prices[k];
+    function say(text, who='bot'){
+      const div = document.createElement('div');
+      div.className = 'msg '+(who==='me'?'me':'bot');
+      div.innerHTML = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function greet(){
+      say(`<b>Hi! I'm BASI-L</b> 🧪 Your retro order agent. I sell <b>small €${CONFIG.prices.small}</b> and <b>medium €${CONFIG.prices.medium}</b> basil plants. Shipping in NL is <b>€${CONFIG.shippingEUR}</b>. Type <code>small</code> or <code>medium</code> to start.`);
+      state.step = 'size';
+    }
+
+    function send(){
+      const text = input.value.trim();
+      if(!text) return;
+      say(text, 'me');
+      input.value='';
+
+      switch(state.step){
+        case 'size':{
+          const t = text.toLowerCase();
+          if(t!=='small' && t!=='medium'){ say("Please type <code>small</code> or <code>medium</code>."); return; }
+          state.choice = t; say(`Nice. How many <b>${t}</b> plants? (enter a number)`);
+          state.step = 'qty';
+          break; }
+        case 'qty':{
+          const n = parseInt(text,10);
+          if(!(n>0)){ say('Please enter a number like 1, 2, or 3.'); return; }
+          state.qty = n; say('Got it. Your name and email? (e.g., Jane Doe, jane@example.com)');
+          state.step = 'nameemail';
+          break; }
+        case 'nameemail':{
+          const parts = text.split(',');
+          if(parts.length<2){ say('Please provide both name and email separated by a comma.'); return; }
+          state.buyer.name = parts[0].trim();
+          state.buyer.email = parts.slice(1).join(',').trim();
+          say('Address line with house number?');
+          state.step = 'street';
+          break; }
+        case 'street':{
+          state.buyer.street = text; say('Postcode? (e.g., 1012 AB)'); state.step = 'postcode'; break; }
+        case 'postcode':{
+          state.buyer.postcode = text; say('City?'); state.step = 'city'; break; }
+        case 'city':{
+          state.buyer.city = text;
+          const price = CONFIG.prices[state.choice];
+          const subtotal = price * state.qty;
+          const total = subtotal + CONFIG.shippingEUR;
+          const sum = `Order summary:\n- ${state.choice.toUpperCase()} × ${state.qty} @ €${price} = €${subtotal}\n- Shipping NL: €${CONFIG.shippingEUR}\nTOTAL: €${total}`;
+          say(sum.replaceAll('\n','<br>'));
+          say('Type <code>confirm</code> to place your order via email, or <code>cancel</code> to start over.');
+          state.step = 'confirm';
+          break; }
+        case 'confirm':{
+          const t = text.toLowerCase();
+          if(t==='cancel'){ say('Cancelled. Type <code>small</code> or <code>medium</code> to start again.'); state.step='size'; return; }
+          if(t!=='confirm'){ say("Please type <code>confirm</code> or <code>cancel</code>."); return; }
+          // Add to cart + open email
+          cart[state.choice] += state.qty;
+          renderCart();
+          // prefill checkout fields
+          document.getElementById('name').value = state.buyer.name;
+          document.getElementById('email').value = state.buyer.email;
+          document.getElementById('street').value = state.buyer.street;
+          document.getElementById('postcode').value = state.buyer.postcode;
+          document.getElementById('city').value = state.buyer.city;
+
+          // Compose email
+          const subtotal = CONFIG.prices[state.choice] * state.qty;
+          const total = subtotal + CONFIG.shippingEUR;
+          const body = encodeURIComponent(
+            `New basil order via BASI-L\n\nItems:\n- ${state.choice.toUpperCase()} × ${state.qty} @ €${CONFIG.prices[state.choice]} = €${subtotal}\n\nSubtotal: €${subtotal}\nShipping (NL): €${CONFIG.shippingEUR}\nTOTAL: €${total}\n\nBuyer:\n${state.buyer.name}\n${state.buyer.street}\n${state.buyer.postcode} ${state.buyer.city}\nEmail: ${state.buyer.email}\n\nPlease reply with payment link and ETA.`
+          );
+          const subject = encodeURIComponent(`Basil Order — ${state.buyer.name}`);
+          window.location.href = `mailto:${CONFIG.sellerEmail}?subject=${subject}&body=${body}`;
+          say('✅ Order sent! You will receive a reply with payment and shipping details.');
+          state = { step: 'size', choice: null, qty: 0, buyer:{} };
+          break; }
       }
     }
-    if(items.length===0){ return { error: 'Cart is empty. Add some basil first.' }; }
-    if(!name || !email || !street || !postcode || !city){ return { error: 'Please fill name, email, street, postcode, and city.' }; }
-    const total = subtotal + CONFIG.shippingEUR;
-    const buyer = { name, email, street, postcode, city, notes };
-    return { items, subtotal, total, buyer };
-  }
 
-  // ===== START PAYMENT (Tikkie / Mollie) =====
-  async function startPayment(provider){
-    const order = gatherOrder();
-    if(order.error){ alert(order.error); return; }
-    const orderId = 'BASIL-' + Date.now();
-    const desc = `${order.items.map(i => `${i.kind.toUpperCase()}x${i.qty}`).join('+')} + ship`;
-    const returnUrl = location.origin + '/#thanks?o=' + encodeURIComponent(orderId);
-    try{
-      const res = await fetch('/api/create-payment',{
-        method:'POST', headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify({
-          provider,
-          amountEUR: Number(order.total),
-          description: `Basil order ${orderId} (${desc})`,
-          referenceId: orderId,
-          buyer: order.buyer,
-          returnUrl
-        })
-      });
-      if(!res.ok){ const t = await res.text(); throw new Error(t||('HTTP '+res.status)); }
-      const data = await res.json();
-      if(!data.paymentUrl){ throw new Error('No paymentUrl from server.'); }
-      // remember last order for status check
-      localStorage.setItem('basil-last-ref', orderId);
-      localStorage.setItem('basil-last-provider', provider);
-      window.location.href = data.paymentUrl; // redirect to provider checkout
-    }catch(err){
-      console.error(err);
-      alert('Could not start payment. You can still place order via email.');
+    // Boot agent
+    greet();
+
+    // ===== THANKS PAGE AUTO STATUS CHECK =====
+    function checkThanks(){
+      const hash = location.hash || '';
+      if(hash.startsWith('#thanks')){
+        const sec = document.getElementById('thanks');
+        if(sec) sec.style.display = 'block';
+        const m = hash.match(/o=([^&]+)/);
+        const ref = m ? decodeURIComponent(m[1]) : (localStorage.getItem('basil-last-ref')||'');
+        const statusEl = document.getElementById('payStatus');
+        if(!ref){ if(statusEl) statusEl.textContent = 'No order reference found.'; return; }
+        let tries = 0;
+        const iv = setInterval(async ()=>{
+          tries++;
+          try{
+            const r = await fetch(`/api/order-status?referenceId=${encodeURIComponent(ref)}`);
+            const j = await r.json();
+            if(statusEl) statusEl.textContent = `Status: ${j.status || 'unknown'}`;
+            if(j.status==='paid' || j.status==='succeeded'){
+              clearInterval(iv);
+              if(statusEl) statusEl.innerHTML = '✅ Paid! Your basil is on its way. We\'ll confirm via email soon.';
+            }
+            if(tries>60) clearInterval(iv);
+          }catch(e){ if(statusEl) statusEl.textContent = 'Checking…'; }
+        }, 5000);
+      }
     }
-  }
+    window.addEventListener('load', checkThanks);
+    window.addEventListener('hashchange', checkThanks);
 
-  function payWithTikkie(){ startPayment('tikkie'); }
-  function payWithMollie(){ startPayment('mollie'); }
-
-  // ===== AGENT (BASI-L 1.0) =====
-  const chat = document.getElementById('chat');
-  const input = document.getElementById('chatInput');
-  let state = { step: 'hello', choice: null, qty: 0, buyer:{} };
-
-  function say(text, who='bot'){
-    const div = document.createElement('div');
-    div.className = 'msg '+(who==='me'?'me':'bot');
-    div.innerHTML = text;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-  }
-
-  function greet(){
-    say(`<b>Hi! I'm BASI-L</b> 🧪 Your retro order agent. I sell <b>small €${CONFIG.prices.small}</b> and <b>medium €${CONFIG.prices.medium}</b> basil plants. Shipping in NL is <b>€${CONFIG.shippingEUR}</b>. Type <code>small</code> or <code>medium</code> to start.`);
-    state.step = 'size';
-  }
-
-  function send(){
-    const text = input.value.trim();
-    if(!text) return;
-    say(text, 'me');
-    input.value='';
-
-    switch(state.step){
-      case 'size':{
-        const t = text.toLowerCase();
-        if(t!=='small' && t!=='medium'){ say("Please type <code>small</code> or <code>medium</code>."); return; }
-        state.choice = t; say(`Nice. How many <b>${t}</b> plants? (enter a number)`);
-        state.step = 'qty';
-        break; }
-      case 'qty':{
-        const n = parseInt(text,10);
-        if(!(n>0)){ say('Please enter a number like 1, 2, or 3.'); return; }
-        state.qty = n; say('Got it. Your name and email? (e.g., Jane Doe, jane@example.com)');
-        state.step = 'nameemail';
-        break; }
-      case 'nameemail':{
-        const parts = text.split(',');
-        if(parts.length<2){ say('Please provide both name and email separated by a comma.'); return; }
-        state.buyer.name = parts[0].trim();
-        state.buyer.email = parts.slice(1).join(',').trim();
-        say('Address line with house number?');
-        state.step = 'street';
-        break; }
-      case 'street':{
-        state.buyer.street = text; say('Postcode? (e.g., 1012 AB)'); state.step = 'postcode'; break; }
-      case 'postcode':{
-        state.buyer.postcode = text; say('City?'); state.step = 'city'; break; }
-      case 'city':{
-        state.buyer.city = text;
-        const price = CONFIG.prices[state.choice];
-        const subtotal = price * state.qty;
-        const total = subtotal + CONFIG.shippingEUR;
-        const sum = `Order summary:\n- ${state.choice.toUpperCase()} × ${state.qty} @ €${price} = €${subtotal}\n- Shipping NL: €${CONFIG.shippingEUR}\nTOTAL: €${total}`;
-        say(sum.replaceAll('\n','<br>'));
-        say('Type <code>confirm</code> to place your order via email, or <code>cancel</code> to start over.');
-        state.step = 'confirm';
-        break; }
-      case 'confirm':{
-        const t = text.toLowerCase();
-        if(t==='cancel'){ say('Cancelled. Type <code>small</code> or <code>medium</code> to start again.'); state.step='size'; return; }
-        if(t!=='confirm'){ say("Please type <code>confirm</code> or <code>cancel</code>."); return; }
-        // Add to cart + open email
-        cart[state.choice] += state.qty;
-        renderCart();
-        // prefill checkout fields
-        document.getElementById('name').value = state.buyer.name;
-        document.getElementById('email').value = state.buyer.email;
-        document.getElementById('street').value = state.buyer.street;
-        document.getElementById('postcode').value = state.buyer.postcode;
-        document.getElementById('city').value = state.buyer.city;
-
-        // Compose email
-        const subtotal = CONFIG.prices[state.choice] * state.qty;
-        const total = subtotal + CONFIG.shippingEUR;
-        const body = encodeURIComponent(
-          `New basil order via BASI-L\n\nItems:\n- ${state.choice.toUpperCase()} × ${state.qty} @ €${CONFIG.prices[state.choice]} = €${subtotal}\n\nSubtotal: €${subtotal}\nShipping (NL): €${CONFIG.shippingEUR}\nTOTAL: €${total}\n\nBuyer:\n${state.buyer.name}\n${state.buyer.street}\n${state.buyer.postcode} ${state.buyer.city}\nEmail: ${state.buyer.email}\n\nPlease reply with payment link and ETA.`
-        );
-        const subject = encodeURIComponent(`Basil Order — ${state.buyer.name}`);
-        window.location.href = `mailto:${CONFIG.sellerEmail}?subject=${subject}&body=${body}`;
-        say('✅ Order sent! You will receive a reply with payment and shipping details.');
-        state = { step: 'size', choice: null, qty: 0, buyer:{} };
-        break; }
-    }
-  }
-
-  // Boot agent
-  greet();
-
-  // ===== THANKS PAGE AUTO STATUS CHECK =====
-  function checkThanks(){
-    const hash = location.hash || '';
-    if(hash.startsWith('#thanks')){
-      const sec = document.getElementById('thanks');
-      if(sec) sec.style.display = 'block';
-      const m = hash.match(/o=([^&]+)/);
-      const ref = m ? decodeURIComponent(m[1]) : (localStorage.getItem('basil-last-ref')||'');
-      const statusEl = document.getElementById('payStatus');
-      if(!ref){ if(statusEl) statusEl.textContent = 'No order reference found.'; return; }
-      let tries = 0;
-      const iv = setInterval(async ()=>{
-        tries++;
-        try{
-          const r = await fetch(`/api/order-status?referenceId=${encodeURIComponent(ref)}`);
-          const j = await r.json();
-          if(statusEl) statusEl.textContent = `Status: ${j.status || 'unknown'}`;
-          if(j.status==='paid' || j.status==='succeeded'){
-            clearInterval(iv);
-            if(statusEl) statusEl.innerHTML = '✅ Paid! Your basil is on its way. We\'ll confirm via email soon.';
-          }
-          if(tries>60) clearInterval(iv);
-        }catch(e){ if(statusEl) statusEl.textContent = 'Checking…'; }
-      }, 5000);
-    }
-  }
-  window.addEventListener('load', checkThanks);
-  window.addEventListener('hashchange', checkThanks);
-
-  // ===== FUN: VISITOR COUNTER =====
-  (function(){
-    const key = 'basil-counter';
-    let n = parseInt(localStorage.getItem(key)||'123',10);
-    n += Math.floor(Math.random()*3)+1; // bouncy
-    localStorage.setItem(key, n);
-    document.getElementById('counter').textContent = String(n).padStart(6,'0');
-  })();
-</script>
+    // ===== FUN: VISITOR COUNTER =====
+    (function(){
+      const key = 'basil-counter';
+      let n = parseInt(localStorage.getItem(key)||'123',10);
+      n += Math.floor(Math.random()*3)+1; // bouncy
+      localStorage.setItem(key, n);
+      document.getElementById('counter').textContent = String(n).padStart(6,'0');
+    })();
+  </script>
 </body>
 </html>
